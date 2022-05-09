@@ -2,7 +2,9 @@
 // Copyright (c) 2022 Nathan Fiedler
 //
 
-//! A simple in-memory key/value where keys and values are strings.
+//! A simple in-memory key/value with nested transactions and a function for
+//! getting the number of occurrences of a particular value. Keys and values are
+//! strings.
 
 use std::collections::HashMap;
 
@@ -116,7 +118,7 @@ impl<'a> Transaction {
         }
     }
 
-    /// Save the value using the given key.
+    /// Save the value using the given key in the transaction.
     pub fn set<T: Into<String>>(&mut self, name: T, value: T) {
         let name_str: String = name.into();
         self.delete(&name_str);
@@ -124,8 +126,7 @@ impl<'a> Transaction {
         self.store.set(&name_str, &value_str)
     }
 
-    /// Removes the value with the given key from the store by overwriting it
-    /// with a `None`.
+    /// Removes the value with the given key from the transaction.
     pub fn delete(&mut self, name: &str) {
         self.store.delete(name);
         if let Some(parent) = self.parent.as_ref() {
@@ -177,8 +178,7 @@ impl Database {
         self.transaction.set(name, value)
     }
 
-    /// Removes the value with the given key from the store by overwriting it
-    /// with a `None`.
+    /// Removes the value with the given key.
     pub fn delete(&mut self, name: &str) {
         self.transaction.delete(name)
     }

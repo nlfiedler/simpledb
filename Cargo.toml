@@ -1,7 +1,13 @@
 [package]
 name = "simpledb"
 version = "0.1.0"
+authors = ["Nathan Fiedler <nathanfiedler@fastmail.fm>"]
 edition = "2021"
+description = "Simple Database Challenge in Rust"
+repository = "https://github.com/nlfiedler/simpledb"
+readme = "README.md"
+keywords = ["database", "transactions"]
+license = "UNLICENSED"
 
 [dependencies]
 anyhow = "1.0.57"
