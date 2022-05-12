@@ -128,16 +128,18 @@ impl<'a> Transaction {
 
     /// Removes the value with the given key from the transaction.
     pub fn delete(&mut self, name: &str) {
-        self.store.delete(name);
-        if let Some(parent) = self.parent.as_ref() {
-            if let Some(value) = parent.get(name) {
-                if let Some(c) = self.counts.get_mut(&value) {
-                    *c -= 1;
-                } else {
-                    self.counts.insert(value.clone(), -1);
+        if !self.store.contains(name) {
+            if let Some(parent) = self.parent.as_ref() {
+                if let Some(value) = parent.get(name) {
+                    if let Some(c) = self.counts.get_mut(&value) {
+                        *c -= 1;
+                    } else {
+                        self.counts.insert(value.clone(), -1);
+                    }
                 }
             }
         }
+        self.store.delete(name);
     }
 
     /// Returns the number of occurrences of the given value.
@@ -333,5 +335,28 @@ mod tests {
         db.commit();
         assert_eq!(db.get("a"), Some("bar".into()));
         assert_eq!(db.get("b"), Some("baz".into()));
+    }
+
+    #[test]
+    fn test_shadow_delete_count() {
+        let mut db = Database::new();
+        db.set("a", "foo");
+        db.set("b", "foo");
+        db.begin();
+        assert_eq!(db.get("a"), Some("foo".into()));
+        assert_eq!(db.get("b"), Some("foo".into()));
+        assert_eq!(db.count("foo"), 2);
+        db.set("a", "bar");
+        assert_eq!(db.count("bar"), 1);
+        assert_eq!(db.count("foo"), 1);
+        db.delete("a");
+        assert_eq!(db.count("bar"), 0);
+        assert_eq!(db.count("foo"), 1);
+        db.delete("a");
+        assert_eq!(db.count("bar"), 0);
+        assert_eq!(db.count("foo"), 1);
+        db.delete("b");
+        assert_eq!(db.count("bar"), 0);
+        assert_eq!(db.count("foo"), 0);
     }
 }
