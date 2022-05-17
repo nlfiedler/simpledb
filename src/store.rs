@@ -198,7 +198,8 @@ impl Database {
     }
 
     /// Commit _all_ open transactions.
-    pub fn commit(&mut self) {
+    pub fn commit(&mut self) -> bool {
+        let mut changed = false;
         while let Some(mut transaction) = self.transaction.parent.take() {
             for (key, value) in self.transaction.store.values.iter() {
                 if let Some(v) = value {
@@ -208,8 +209,10 @@ impl Database {
                 }
             }
             self.transaction = *transaction;
+            changed = true;
         }
         self.transaction.store.compact();
+        changed
     }
 
     /// Rollback the current transaction. Returns true if rollback was
@@ -269,6 +272,18 @@ mod tests {
         second.delete("name2");
         assert_eq!(second.count("value"), 0);
         assert_eq!(first.count("value"), 1);
+    }
+
+    #[test]
+    fn test_commit_rollback() {
+        let mut db = Database::new();
+        assert_eq!(db.rollback(), false);
+        assert_eq!(db.commit(), false);
+        db.begin();
+        db.set("a", "foo");
+        assert_eq!(db.commit(), true);
+        db.begin();
+        assert_eq!(db.rollback(), true);
     }
 
     #[test]
